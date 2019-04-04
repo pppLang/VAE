@@ -8,6 +8,7 @@ class Encoder(nn.Module):
         self.latent_num = latent_num
         self.linears = nn.Sequential(
             nn.Linear(in_features, in_features*2),
+            nn.ReLU(),
             nn.Linear(in_features*2, latent_num*2),
             nn.ReLU()
         )
@@ -23,6 +24,7 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.linears = nn.Sequential(
             nn.Linear(latent_num, out_features*2),
+            nn.ReLU(),
             nn.Linear(out_features*2, out_features),
             nn.ReLU()
         )
@@ -44,7 +46,7 @@ class VAE(nn.Module):
         mean, std = self.encoder(x)
         z = self.sample(mean, std)
         x_ = self.decoder(z)
-        return x_
+        return x_, mean, std
 
 
 class KLLoss(nn.Module):
@@ -54,7 +56,9 @@ class KLLoss(nn.Module):
     def forward(self, mean, std):
         std2 = std * std
         mean2 = mean * mean
-        return torch.mean(mean2 + std2 - torch.log(std2) - 1)
+        # print(torch.log(std2+1e-6).mean())
+        # print(torch.log(std2).mean())
+        return 0.5*torch.mean(mean2 + std2 - torch.log(std2) - 1)
 
 
 if __name__=="__main__":
