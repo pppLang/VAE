@@ -3,15 +3,13 @@ from torch import nn
 
 
 class Encoder(nn.Module):
-    def __init__(self, in_features, latent_num):
+    def __init__(self, in_features, mid_features, latent_num):
         super(Encoder, self).__init__()
         self.latent_num = latent_num
-        self.linears = nn.Sequential(
-            nn.Linear(in_features, in_features*2),
-            nn.ReLU(),
-            nn.Linear(in_features*2, latent_num*2),
-            nn.ReLU()
-        )
+        self.linear1 = nn.Linear(in_features, mid_features)
+        self.linear_mean = nn.Linear(mid_features, latent_num)
+        self.linear_std = nn.Linear(mid_features, latent_num)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         result = self.linears(x)
@@ -19,18 +17,19 @@ class Encoder(nn.Module):
         variance = result[:, self.latent_num:]
         return mean, variance
 
+
 class Decoder(nn.Module):
     def __init__(self, latent_num, out_features):
         super(Decoder, self).__init__()
         self.linears = nn.Sequential(
             nn.Linear(latent_num, out_features*2),
-            nn.ReLU(),
             nn.Linear(out_features*2, out_features),
-            nn.ReLU()
+            nn.Sigmoid()
         )
 
     def forward(self, x):
         return self.linears(x)
+
 
 class VAE(nn.Module):
     def __init__(self, features, latent_num):
@@ -61,7 +60,7 @@ class KLLoss(nn.Module):
         return 0.5*torch.mean(mean2 + std2 - torch.log(std2) - 1)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     vae = VAE(28*28, 2)
     x = torch.rand(64, 28*28)
     print(x.shape)
