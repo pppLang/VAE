@@ -8,22 +8,22 @@ class Encoder(nn.Module):
         self.latent_num = latent_num
         self.linear1 = nn.Linear(in_features, mid_features)
         self.linear_mean = nn.Linear(mid_features, latent_num)
-        self.linear_std = nn.Linear(mid_features, latent_num)
+        self.linear_variance = nn.Linear(mid_features, latent_num)
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        result = self.linears(x)
-        mean = result[:, 0:self.latent_num]
-        variance = result[:, self.latent_num:]
+        fea = self.linear1(x)
+        mean = self.relu(self.linear_mean(fea))
+        variance = self.relu(self.linear_variance(fea))
         return mean, variance
 
 
 class Decoder(nn.Module):
-    def __init__(self, latent_num, out_features):
+    def __init__(self, latent_num, mid_features, out_features):
         super(Decoder, self).__init__()
         self.linears = nn.Sequential(
-            nn.Linear(latent_num, out_features*2),
-            nn.Linear(out_features*2, out_features),
+            nn.Linear(latent_num, mid_features),
+            nn.Linear(mid_features, out_features),
             nn.Sigmoid()
         )
 
@@ -55,8 +55,6 @@ class KLLoss(nn.Module):
     def forward(self, mean, std):
         std2 = std * std
         mean2 = mean * mean
-        # print(torch.log(std2+1e-6).mean())
-        # print(torch.log(std2).mean())
         return 0.5*torch.mean(mean2 + std2 - torch.log(std2) - 1)
 
 
